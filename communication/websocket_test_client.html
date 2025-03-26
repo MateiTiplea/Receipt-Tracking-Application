@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>WebSocket Test</title>
+  </head>
+  <body>
+    <h2>WebSocket Test</h2>
+    <ul id="updates"></ul>
+    <script>
+      const ws = new WebSocket("ws://localhost:8765");
+      ws.onmessage = (event) => {
+        const msg = JSON.parse(event.data);
+        const li = document.createElement("li");
+        li.textContent = `Receipt ${msg.receipt_id} → ${msg.status}`;
+        document.getElementById("updates").appendChild(li);
+      };
+    </script>
+  </body>
+</html>
