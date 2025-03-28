@@ -4,10 +4,10 @@ from fastapi import APIRouter, UploadFile, File, HTTPException
 from google.cloud import storage
 from datetime import timedelta
 import os
+from Backend.firebase_config import storage_client
 
 bucket_router = APIRouter(prefix="/api/v1/bucket", tags=["Bucket"])
 
-os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = "C:/Users/Mihai/my_private_key.json"
 
 storage_client = storage.Client()
 

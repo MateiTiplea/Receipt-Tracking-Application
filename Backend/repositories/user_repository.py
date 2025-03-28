@@ -1,11 +1,8 @@
 from firebase_admin import firestore
 from firebase_admin import credentials
 import firebase_admin
+from Backend.firebase_config import db
 
-cred = credentials.Certificate("C:/Users/Mihai/my_private_key.json")
-firebase_admin.initialize_app(cred)
-
-db = firestore.client()
 
 class UserRepository:
     def add_user(self, name: str):
