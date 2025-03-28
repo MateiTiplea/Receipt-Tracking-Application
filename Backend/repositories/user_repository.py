@@ -1,6 +1,3 @@
-from firebase_admin import firestore
-from firebase_admin import credentials
-import firebase_admin
 from Backend.firebase_config import db
 
 

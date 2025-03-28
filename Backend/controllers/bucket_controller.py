@@ -1,7 +1,4 @@
-from sys import prefix
-
 from fastapi import APIRouter, UploadFile, File, HTTPException
-from google.cloud import storage
 from datetime import timedelta
 import os
 from Backend.firebase_config import storage_client
@@ -9,7 +6,6 @@ from Backend.firebase_config import storage_client
 bucket_router = APIRouter(prefix="/api/v1/bucket", tags=["Bucket"])
 
 
-storage_client = storage.Client()
 
 BUCKET_NAME = "receipt-photos-for-receipt-tracking-application"
 
