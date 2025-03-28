@@ -6,6 +6,7 @@ from typing import Optional
 @dataclass
 class Receipt:
     """Represents a processed receipt."""
+    user_uid: Optional[str] = None
     store_name: Optional[str] = None
     store_address: Optional[str] = None
     date: Optional[datetime] = None

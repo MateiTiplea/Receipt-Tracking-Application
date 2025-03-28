@@ -20,3 +20,7 @@ class ReceiptService:
     @staticmethod
     def list():
         return ReceiptRepository.list_receipts()
+
+    @staticmethod
+    def get_receipt_by_user(user_uid: str):
+        return ReceiptRepository.get_receipt_by_user(user_uid)

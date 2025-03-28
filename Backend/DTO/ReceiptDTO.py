@@ -3,6 +3,7 @@ from typing import Optional
 from datetime import datetime
 
 class ReceiptDTO(BaseModel):
+    user_uid: Optional[str] = Field(None, example="123456")
     store_name: Optional[str] = Field(None, example="Mega Image")
     store_address: Optional[str] = Field(None, example="Strada Exemplu 123")
     date: Optional[datetime] = Field(None, example="2025-03-28T10:00:00")

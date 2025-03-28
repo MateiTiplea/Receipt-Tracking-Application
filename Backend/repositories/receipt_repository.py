@@ -28,3 +28,8 @@ class ReceiptRepository:
     def list_receipts():
         docs = db.collection(collection_name).stream()
         return [{ "id": doc.id, **doc.to_dict() } for doc in docs]
+
+    @staticmethod
+    def get_receipt_by_user(user_uid: str):
+        docs = db.collection(collection_name).where("user_uid", "==", user_uid).stream()
+        return [{ "id": doc.id, **doc.to_dict() } for doc in docs]

@@ -24,3 +24,8 @@ async def list_receipts():
 async def delete_receipt(receipt_id: str):
     ReceiptService.delete(receipt_id)
     return {"message": "Receipt deleted"}
+
+@receipt_router.get("/get-receipts-by-user/{user_uid}")
+async def get_receipt_by_user(user_uid: str):
+    receipts = ReceiptService.get_receipt_by_user(user_uid)
+    return receipts

@@ -14,15 +14,23 @@ storage_client = storage.Client()
 BUCKET_NAME = "receipt-photos-for-receipt-tracking-application"
 
 @bucket_router.post("/upload_image/",tags=["bucket"])
-async def upload_image(file: UploadFile = File(...)):
+async def upload_image(file: UploadFile = File(...), folder: str = None):
     try:
+        if not folder:
+            raise HTTPException(status_code=400, detail="Folder name is required.")
+
+        if not folder.endswith("/"):
+            folder += "/"
+
         file_location = f"temp_{file.filename}"
 
         with open(file_location, "wb") as f:
             f.write(await file.read())
 
         bucket = storage_client.bucket(BUCKET_NAME)
-        blob = bucket.blob(file.filename)
+
+        # calea catre fisierul din bucket
+        blob = bucket.blob(folder + file.filename)
         blob.upload_from_filename(file_location)
 
         public_url = blob.public_url
