@@ -1,0 +1,25 @@
+# Google Cloud Vision API
+google-cloud-vision
+
+# Google AI (for Gemini)
+google-generativeai
+
+# Image processing
+Pillow
+
+# HTTP requests
+requests
+
+# Data handling
+pandas
+numpy
+
+# Testing
+pytest
+pytest-cov
+
+# Development tools
+python-dotenv
+
+functions-framework
+google-cloud-storage

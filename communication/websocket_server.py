@@ -1,10 +1,11 @@
 import asyncio
+
 import websockets
 from client_manager import register, unregister
 from pubsub_listener import start_listener
 
 
-async def handler(websocket, path):
+async def handler(websocket):
     print("Client connected")
     await register(websocket)
     try:
