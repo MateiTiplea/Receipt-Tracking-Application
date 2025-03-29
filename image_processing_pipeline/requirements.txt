@@ -28,3 +28,4 @@ google-cloud-storage
 firebase-admin
 pydantic
 google-cloud-firestore
+google-cloud-pubsub
