@@ -2,6 +2,7 @@
 google-cloud-vision
 
 # Google AI (for Gemini)
+google-genai
 google-generativeai
 
 # Image processing

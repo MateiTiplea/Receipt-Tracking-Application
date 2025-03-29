@@ -4,6 +4,7 @@ import re
 import sys
 
 import functions_framework
+from gemini_client import parse_receipt_text
 from ocr.pipeline import get_raw_text, process_receipt_image
 
 # Force logging to stdout
@@ -64,6 +65,28 @@ def process_receipt(cloud_event):
         print(result['full_text'][:500] + "..." if len(result['full_text']) > 500 else result['full_text'])
         print("-" * 50)
         print(f"Confidence: {result['confidence']}, Text blocks: {result['text_block_count']}")
+        
+        # Use Gemini API to extract structured information from the OCR text
+        if result['full_text']:
+            print("DIRECT PRINT: Sending text to Gemini API for processing...")
+            
+            # Parse receipt text with Gemini
+            parsed_receipt = parse_receipt_text(result['full_text'])
+            
+            # Print the structured information
+            print("DIRECT PRINT: Gemini API extracted the following information:")
+            print("-" * 50)
+            print(f"Store Name: {parsed_receipt.get('store_name')}")
+            print(f"Store Address: {parsed_receipt.get('store_address')}")
+            print(f"Date: {parsed_receipt.get('date')}")
+            print(f"Time: {parsed_receipt.get('time')}")
+            print(f"Total Amount: {parsed_receipt.get('total_amount')}")
+            print("-" * 50)
+            
+            # Add structured data to the result
+            result['parsed_receipt'] = parsed_receipt
+        else:
+            logger.warning("LOGGER WARNING: No text was extracted from the image, skipping Gemini processing")
         
         # Add user UUID to the result
         if user_uuid:
