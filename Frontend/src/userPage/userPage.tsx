@@ -4,6 +4,7 @@ import { UploadOutlined, FolderViewOutlined } from "@ant-design/icons";
 import "./userPage.css";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
+import { v4 as uuidv4 } from "uuid";
 
 interface Receipt {
   id: string;
@@ -143,9 +144,17 @@ const UserPage: React.FC = () => {
         return;
       }
 
+      // extrag extensia fisierului
+      const fileExtension = file.name.split(".").pop();
+
+      const newFileName = `receipt_${uuidv4()}.${fileExtension}`;
+
+      // creez un obiect File cu numele nou
+      const newFile = new File([file], newFileName, { type: file.type });
+
       // creez un formData pentru a trimite fisierul
       const formData = new FormData();
-      formData.append("file", file);
+      formData.append("file", newFile);
 
       fetch(
         `http://localhost:8000/api/v1/bucket/upload_image/?folder=${userUid}`,
