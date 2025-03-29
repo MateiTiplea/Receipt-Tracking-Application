@@ -2,6 +2,7 @@
 google-cloud-vision
 
 # Google AI (for Gemini)
+google-genai
 google-generativeai
 
 # Image processing
@@ -23,3 +24,7 @@ python-dotenv
 
 functions-framework
 google-cloud-storage
+
+firebase-admin
+pydantic
+google-cloud-firestore

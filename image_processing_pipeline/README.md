@@ -18,20 +18,6 @@ This Cloud Function is triggered when a new receipt image is uploaded to the Goo
    pip install -r requirements.txt
    ```
 
-### Testing Locally
-
-1. Start the functions framework:
-   ```
-   functions-framework --target=process_receipt --signature-type=event
-   ```
-
-2. In another terminal, run the test script:
-   ```
-   python test_local.py
-   ```
-
-This will simulate a Cloud Storage event and test your function locally.
-
 ### Deployment
 
 To deploy the function to Google Cloud:
@@ -41,12 +27,11 @@ chmod +x deploy.sh
 ./deploy.sh
 ```
 
-## Structure
+Or from a powershell terminal:
 
-- `main.py` - Contains the Cloud Function code
-- `requirements.txt` - Dependencies
-- `test_local.py` - Helper script for local testing
-- `deploy.sh` - Deployment script
+```
+.\deploy.ps1
+```
 
 ## Function Flow
 
@@ -54,9 +39,9 @@ Currently, the function:
 1. Gets triggered when a file is uploaded to the Cloud Storage bucket
 2. Logs information about the uploaded file
 3. Retrieves basic metadata about the file
+4. OCR processing using Vision API
 
 Future enhancements will include:
-1. OCR processing using Vision API
-2. Data cleaning with Gemini AI
-3. Storing structured data in Firestore
-4. Publishing notifications to Pub/Sub
+1. Data cleaning with Gemini AI
+2. Storing structured data in Firestore
+3. Publishing notifications to Pub/Sub

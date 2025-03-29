@@ -23,6 +23,7 @@ gcloud functions deploy "$FUNCTION_NAME" \
   --entry-point="$ENTRY_POINT" \
   --trigger-event-filters="type=google.cloud.storage.object.v1.finalized" \
   --trigger-event-filters="bucket=$BUCKET_NAME" \
+  --set-secrets="GEMINI_API_KEY=gemini-api-key:latest" \
   --memory=256MB
 
 echo "Deployment completed successfully!"
