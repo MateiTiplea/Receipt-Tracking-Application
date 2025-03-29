@@ -6,7 +6,7 @@ from datetime import datetime
 
 import functions_framework
 
-from communication.pubsub_publisher import publish_event
+from pub.pubsub_publisher import publish_event
 from gemini_client import parse_receipt_text
 from google.cloud import firestore
 from models.receipt import Receipt
