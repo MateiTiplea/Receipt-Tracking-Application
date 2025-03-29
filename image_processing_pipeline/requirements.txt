@@ -23,3 +23,7 @@ python-dotenv
 
 functions-framework
 google-cloud-storage
+
+firebase-admin
+pydantic
+google-cloud-firestore
