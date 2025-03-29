@@ -1,4 +1,3 @@
-import json
 import logging
 import os
 import sys
@@ -97,6 +96,18 @@ def process_receipt(cloud_event):
         _, file_extension = os.path.splitext(name)
         if file_extension.lower() not in VALID_IMAGE_EXTENSIONS:
             logger.info(f"LOGGER INFO: Skipping non-image file: {name} with extension {file_extension}")
+            publish_event(
+                project_id="receipt-tracking-application",
+                topic_id="receipt-updates",
+                message={
+                    "type": "receipt_update",
+                    "status": "failed",
+                    "message": f"Invalid file type: {file_extension}",
+                    "receipt_id": name,
+                    "user_uid": None,
+                }
+            )
+            print(f"DIRECT PRINT: Published event with status \"failed\" to Pub/Sub for non-image file: {name}")
             return f"Skipped processing for non-image file: {name}"
 
         # Extract user UUID from path (assuming format: {user_uuid}/image.jpg)
@@ -109,6 +120,19 @@ def process_receipt(cloud_event):
             logger.info(f"LOGGER INFO: Extracted user UUID: {user_uuid} from path: {name}")
         else:
             logger.warning(f"LOGGER WARNING: Could not extract user UUID from path: {name}")
+            publish_event(
+                project_id="receipt-tracking-application",
+                topic_id="receipt-updates",
+                message={
+                    "type": "receipt_update",
+                    "status": "failed",
+                    "message": "User UUID not found in path",
+                    "receipt_id": name,
+                    "user_uid": None,
+                }
+            )
+            print(
+                f"DIRECT PRINT: Published event with status \"failed\" to Pub/Sub for missing user UUID in path: {name}")
 
         print(f"DIRECT PRINT: Processing file: {name} from bucket: {bucket} for user: {user_uuid}")
         publish_event(
@@ -116,14 +140,13 @@ def process_receipt(cloud_event):
             topic_id="receipt-updates",
             message={
                 "type": "receipt_update",
-                "status": "begin_processing",
+                "status": "processing",
+                "message": "Beginning OCR processing",
                 "receipt_id": path_parts[1] if len(path_parts) > 1 else name,
                 "user_uid": user_uuid,
             }
         )
-
-        print(f"DIRECT PRINT: Published event with status \"begin_processing\" to Pub/Sub for file: {name}")
-
+        print(f"DIRECT PRINT: Published event with status \"processing\" for OCR to Pub/Sub for file: {name}")
         # Process the receipt image
         result = get_raw_text(bucket, name)
 
@@ -134,9 +157,37 @@ def process_receipt(cloud_event):
         print("-" * 50)
         print(f"Confidence: {result['confidence']}, Text blocks: {result['text_block_count']}")
 
+        publish_event(
+            project_id="receipt-tracking-application",
+            topic_id="receipt-updates",
+            message={
+                "type": "receipt_update",
+                "status": "processing",
+                "message": "OCR processing completed",
+                "receipt_id": path_parts[1] if len(path_parts) > 1 else name,
+                "user_uid": user_uuid,
+            }
+        )
+        print(
+            f"DIRECT PRINT: Published event with status \"processing\" for finishing OCR processing to Pub/Sub for file: {name}")
+
         # Use Gemini API to extract structured information from the OCR text
         if result['full_text']:
             print("DIRECT PRINT: Sending text to Gemini API for processing...")
+
+            publish_event(
+                project_id="receipt-tracking-application",
+                topic_id="receipt-updates",
+                message={
+                    "type": "receipt_update",
+                    "status": "processing",
+                    "message": "Gemini processing started",
+                    "receipt_id": path_parts[1] if len(path_parts) > 1 else name,
+                    "user_uid": user_uuid,
+                }
+            )
+            print(
+                f"DIRECT PRINT: Published event with status \"processing\" for Gemini processing to Pub/Sub for file: {name}")
 
             # Parse receipt text with Gemini
             parsed_receipt = parse_receipt_text(result['full_text'])
@@ -153,6 +204,20 @@ def process_receipt(cloud_event):
 
             # Add structured data to the result
             result['parsed_receipt'] = parsed_receipt
+
+            publish_event(
+                project_id="receipt-tracking-application",
+                topic_id="receipt-updates",
+                message={
+                    "type": "receipt_update",
+                    "status": "processing",
+                    "message": "Gemini processing completed",
+                    "receipt_id": path_parts[1] if len(path_parts) > 1 else name,
+                    "user_uid": user_uuid,
+                }
+            )
+            print(
+                f"DIRECT PRINT: Published event with status \"processing\" for completing Gemini processing to Pub/Sub for file: {name}")
 
             try:
                 total_amount = float(parsed_receipt.get("total_amount")) if parsed_receipt.get(
@@ -181,6 +246,7 @@ def process_receipt(cloud_event):
                 message={
                     "type": "receipt_update",
                     "status": "success",
+                    "message": "Receipt processed successfully",
                     "receipt_id": path_parts[1] if len(path_parts) > 1 else name,
                     "user_uid": user_uuid,
                 }
@@ -200,7 +266,8 @@ def process_receipt(cloud_event):
                     "user_uid": user_uuid,
                 }
             )
-            print(f"DIRECT PRINT: Published event with status \"failed\" because no text was extracted from the file to Pub/Sub for file: {name}")
+            print(
+                f"DIRECT PRINT: Published event with status \"failed\" because no text was extracted from the file to Pub/Sub for file: {name}")
 
         # Add user UUID to the result
         if user_uuid:
@@ -218,7 +285,8 @@ def process_receipt(cloud_event):
                 "type": "receipt_update",
                 "status": "failed",
                 "message": str(e),
-                "receipt_id": cloud_event.data["name"].split('/')[1] if '/' in cloud_event.data["name"] else cloud_event.data["name"],
+                "receipt_id": cloud_event.data["name"].split('/')[1] if '/' in cloud_event.data["name"] else
+                cloud_event.data["name"],
                 "user_uid": cloud_event.data["name"].split('/')[0] if '/' in cloud_event.data["name"] else None,
             }
         )

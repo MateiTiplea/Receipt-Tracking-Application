@@ -12,7 +12,8 @@
       ws.onmessage = (event) => {
         const msg = JSON.parse(event.data);
         const li = document.createElement("li");
-        li.textContent = `Receipt ${msg.receipt_id} from user ${msg.user_uid} → ${msg.status}`;
+        li.textContent = `Receipt ${msg.receipt_id} from user ${msg.user_uid} → ${msg.status}
+        Message: ${msg.message}`;
         document.getElementById("updates").appendChild(li);
       };
     </script>
