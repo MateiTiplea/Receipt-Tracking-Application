@@ -23,6 +23,7 @@ interface Receipt {
   store_address: string;
   processed_at: string;
   confidence_score: number;
+  categories: string[];
 }
 
 const { Title } = Typography;
@@ -82,6 +83,11 @@ const columns = [
         hour12: false,
       });
     },
+  },
+  {
+    title: "Categories",
+    dataIndex: "categories",
+    key: "categories",
   },
   {
     title: "View Receipt",
@@ -145,6 +151,7 @@ const UserPage: React.FC = () => {
         totalAmount: receipt.total_amount,
         processedTime: receipt.processed_at,
         imageUrl: receipt.image_url,
+        categories: receipt.categories.join(", "),
       }));
 
       setReceiptData(formattedData);
