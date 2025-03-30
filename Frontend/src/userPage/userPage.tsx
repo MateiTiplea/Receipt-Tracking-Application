@@ -1,6 +1,11 @@
 import React, { use } from "react";
 import { Button, Table, Typography } from "antd";
-import { UploadOutlined, FolderViewOutlined, DownloadOutlined } from "@ant-design/icons";
+import {
+  UploadOutlined,
+  FolderViewOutlined,
+  DownloadOutlined,
+  CloseOutlined,
+} from "@ant-design/icons";
 import "./userPage.css";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
@@ -42,6 +47,14 @@ const columns = [
     title: "Date",
     dataIndex: "date",
     key: "date",
+    render: (text: string) => {
+      const date = new Date(text);
+      return date.toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      });
+    },
   },
   {
     title: "Time",
@@ -57,6 +70,18 @@ const columns = [
     title: "Processed Time",
     dataIndex: "processedTime",
     key: "processedTime",
+    render: (text: string) => {
+      const date = new Date(text);
+      return date.toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false,
+      });
+    },
   },
   {
     title: "View Receipt",
@@ -75,6 +100,7 @@ const UserPage: React.FC = () => {
   const [user, setUser] = useState<any>(null);
   const navigate = useNavigate();
   const [receiptData, setReceiptData] = useState<any>([]);
+  const [notifications, setNotifications] = useState<string[]>([]);
 
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
@@ -180,22 +206,79 @@ const UserPage: React.FC = () => {
     }
   };
 
+  // receive notification when a new receipt is added
+
+  useEffect(() => {
+    const ws = new WebSocket("ws://localhost:8765");
+
+    ws.onopen = () => {
+      console.log("Connected to WebSocket server");
+    };
+
+    ws.onmessage = (event) => {
+      const msg = JSON.parse(event.data);
+      const message = msg.message;
+      //console.log("WebSocket message total:", msg);
+      //console.log("WebSocket message received:", message);
+
+      // Adaugă notificarea în listă
+      const userUid = user?.uid;
+      if (msg.user_uid === userUid) {
+        setNotifications((prev) => [...prev, msg.message]);
+        console.log("Notification received:", msg.message);
+
+        if (message === "Receipt processed successfully") {
+          loadReceiptData(); // Reîncarcă receipt-urile
+        }
+      } else {
+        console.log("Not your receipt, not showing notification.");
+        console.log("User UID: ", user?.uid);
+        console.log("Message UID: ", msg.user_uid);
+      }
+    };
+
+    ws.onclose = () => {
+      console.log("WebSocket connection closed");
+    };
+
+    ws.onerror = (error) => {
+      console.error("WebSocket error:", error);
+    };
+
+    return () => {
+      ws.close();
+    };
+  }, [user]);
+
+  useEffect(() => {
+    if (notifications.length > 0) {
+      const timer = setTimeout(() => {
+        setNotifications((prev) => prev.slice(1));
+      }, 3000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [notifications]);
+
+  const removeNotification = (index: any) => {
+    setNotifications((prev) => prev.filter((_, i) => i !== index));
+  };
 
   const handleDownloadExcel = async () => {
     if (!user?.uid) {
       console.error("UID-ul utilizatorului nu este disponibil.");
       return;
     }
-  
+
     const response = await fetch(
       `http://localhost:8000/api/v1/stats/export-excel?uid=${user.uid}`
     );
-  
+
     if (!response.ok) {
       console.error("Exportul a eșuat.");
       return;
     }
-  
+
     const blob = await response.blob();
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -204,7 +287,6 @@ const UserPage: React.FC = () => {
     link.click();
     window.URL.revokeObjectURL(url);
   };
-  
 
   return (
     <div className="user-page-container">
@@ -220,7 +302,7 @@ const UserPage: React.FC = () => {
         >
           Upload Receipt
         </Button>
-        
+
         <input
           id="file-upload"
           type="file"
@@ -228,6 +310,19 @@ const UserPage: React.FC = () => {
           style={{ display: "none" }}
           onChange={handleFileUpload}
         />
+
+        {/*Notificari*/}
+        <div className="notifications-container">
+          {notifications.map((notification, index) => (
+            <div key={index} className="notification-popup">
+              <span>{notification}</span>
+              <CloseOutlined
+                onClick={() => removeNotification(index)}
+                style={{ cursor: "pointer", marginLeft: "10px" }}
+              />
+            </div>
+          ))}
+        </div>
       </div>
       <div>
         <Table
@@ -235,21 +330,19 @@ const UserPage: React.FC = () => {
           dataSource={receiptData}
           className="user-table"
           rowKey="id"
-          pagination={{ pageSize: 7 }}
+          pagination={{ pageSize: 6 }}
         />
       </div>
       <div style={{ marginTop: "20px" }}>
-  <Button
-    className="upload-button"
-    type="primary"
-    icon={<DownloadOutlined />}
-    onClick={handleDownloadExcel}
-    style={{ marginLeft: "10px" }}
-  >
-    Download Info
-  </Button>
-</div>
-
+        <Button
+          className="download-button"
+          type="primary"
+          icon={<DownloadOutlined />}
+          onClick={handleDownloadExcel}
+        >
+          Download Info
+        </Button>
+      </div>
     </div>
   );
 };
