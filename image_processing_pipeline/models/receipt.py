@@ -1,6 +1,6 @@
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from datetime import datetime
-from typing import Optional
+from typing import List, Optional
 
 
 @dataclass
@@ -16,6 +16,7 @@ class Receipt:
     image_url: Optional[str] = None
     confidence_score: Optional[float] = None
     processed_at: Optional[datetime] = None
+    categories: List[str] = field(default_factory=lambda: ["Miscellaneous"])
     
     
     def to_dict(self):

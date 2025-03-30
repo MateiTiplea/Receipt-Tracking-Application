@@ -4,12 +4,11 @@ import sys
 from datetime import datetime
 
 import functions_framework
-
-from pub.pubsub_publisher import publish_event
 from gemini_client import parse_receipt_text
 from google.cloud import firestore
 from models.receipt import Receipt
 from ocr.pipeline import get_raw_text
+from pub.pubsub_publisher import publish_event
 
 # Force logging to stdout
 logging.basicConfig(
@@ -40,7 +39,7 @@ def save_receipt_to_firestore(user_uid, parsed_receipt, image_url, raw_text, con
     try:
         # Initialize Firestore client
         db = firestore.Client()
-
+        
         # Create a new Receipt object
         receipt = Receipt(
             user_uid=user_uid,
@@ -52,21 +51,23 @@ def save_receipt_to_firestore(user_uid, parsed_receipt, image_url, raw_text, con
             raw_text=raw_text,
             image_url=image_url,
             confidence_score=confidence_score,
-            processed_at=datetime.now()
+            processed_at=datetime.now(),
+            categories=parsed_receipt.get('categories', ["Miscellaneous"])
         )
-
+        
         # Convert the Receipt object to a dictionary
         receipt_dict = receipt.to_dict()
-
+        
         # Create a new document in the receipts collection
         doc_ref = db.collection('receipts').document()
         doc_ref.set(receipt_dict)
-
+        
         logger.info(f"LOGGER INFO: Saved receipt to Firestore with ID: {doc_ref.id}")
         print(f"DIRECT PRINT: Saved receipt to Firestore with ID: {doc_ref.id}")
-
+        print(f"DIRECT PRINT: Categories assigned: {receipt.categories}")
+        
         return doc_ref.id
-
+        
     except Exception as e:
         logger.error(f"LOGGER ERROR: Failed to save receipt to Firestore: {e}")
         print(f"DIRECT PRINT: Failed to save receipt to Firestore: {e}")
