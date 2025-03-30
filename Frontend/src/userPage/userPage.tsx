@@ -1,6 +1,6 @@
 import React, { use } from "react";
 import { Button, Table, Typography } from "antd";
-import { UploadOutlined, FolderViewOutlined } from "@ant-design/icons";
+import { UploadOutlined, FolderViewOutlined, DownloadOutlined } from "@ant-design/icons";
 import "./userPage.css";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
@@ -180,6 +180,32 @@ const UserPage: React.FC = () => {
     }
   };
 
+
+  const handleDownloadExcel = async () => {
+    if (!user?.uid) {
+      console.error("UID-ul utilizatorului nu este disponibil.");
+      return;
+    }
+  
+    const response = await fetch(
+      `http://localhost:8000/api/v1/stats/export-excel?uid=${user.uid}`
+    );
+  
+    if (!response.ok) {
+      console.error("Exportul a eșuat.");
+      return;
+    }
+  
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `raport_${user.uid}.xlsx`;
+    link.click();
+    window.URL.revokeObjectURL(url);
+  };
+  
+
   return (
     <div className="user-page-container">
       <div>
@@ -194,6 +220,7 @@ const UserPage: React.FC = () => {
         >
           Upload Receipt
         </Button>
+        
         <input
           id="file-upload"
           type="file"
@@ -211,6 +238,18 @@ const UserPage: React.FC = () => {
           pagination={{ pageSize: 7 }}
         />
       </div>
+      <div style={{ marginTop: "20px" }}>
+  <Button
+    className="upload-button"
+    type="primary"
+    icon={<DownloadOutlined />}
+    onClick={handleDownloadExcel}
+    style={{ marginLeft: "10px" }}
+  >
+    Download Info
+  </Button>
+</div>
+
     </div>
   );
 };

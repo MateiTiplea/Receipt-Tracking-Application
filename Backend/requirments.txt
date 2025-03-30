@@ -4,3 +4,7 @@ firebase-admin
 pydantic
 google-cloud-storage
 google-cloud-firestore
+google-cloud-bigquery
+pandas
+openpyxl
+matplotlib

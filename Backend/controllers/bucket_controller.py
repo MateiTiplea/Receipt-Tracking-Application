@@ -9,7 +9,7 @@ bucket_router = APIRouter(prefix="/api/v1/bucket", tags=["Bucket"])
 
 BUCKET_NAME = "receipt-photos-for-receipt-tracking-application"
 
-@bucket_router.post("/upload_image/",tags=["bucket"])
+@bucket_router.post("/upload_image/",tags=["Bucket"])
 async def upload_image(file: UploadFile = File(...), folder: str = None):
     try:
         if not folder:
@@ -39,7 +39,7 @@ async def upload_image(file: UploadFile = File(...), folder: str = None):
         raise HTTPException(status_code=400, detail=f"Failed to upload image: {e}")
 
 
-@bucket_router.post("/create_folder_with_name/",tags=["bucket"])
+@bucket_router.post("/create_folder_with_name/",tags=["Bucket"])
 async def create_folder_with_name(folder_name: str):
     try:
         if not folder_name.endswith("/"):
@@ -61,7 +61,7 @@ async def create_folder_with_name(folder_name: str):
         raise HTTPException(status_code=400, detail=f"Failed to create folder: {e}")
 
 
-@bucket_router.get("/get_content_by_folder_name/",tags=["bucket"])
+@bucket_router.get("/get_content_by_folder_name/",tags=["Bucket"])
 async def get_content_by_folder_name(folder_name: str):
     try:
         if not folder_name.endswith("/"):
@@ -91,3 +91,7 @@ async def get_content_by_folder_name(folder_name: str):
 
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Failed to get content: {e}")
+
+
+
+
