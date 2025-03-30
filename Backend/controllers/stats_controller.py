@@ -36,7 +36,7 @@ def get_top_stores():
         raise HTTPException(status_code=500, detail=f"Eroare BigQuery: {e}")
 
 
-@stats_router.get("/distributia-operatiilor-crud")
+@stats_router.get("/CRUD-operations-distribution")
 def get_operation_counts():
     query = """
     SELECT 

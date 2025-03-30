@@ -1,6 +1,6 @@
 from dataclasses import asdict, dataclass
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 
 
 @dataclass
@@ -16,8 +16,8 @@ class Receipt:
     image_url: Optional[str] = None
     confidence_score: Optional[float] = None
     processed_at: Optional[datetime] = None
-    
-    
+    categories: Optional[List[str]] = None
+
     def to_dict(self):
         """Convert to dictionary for Firestore storage."""
         result = {}
