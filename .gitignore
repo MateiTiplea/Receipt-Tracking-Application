@@ -175,3 +175,4 @@ cython_debug/
 .pypirc
 .idea/misc.xml
 Frontend/src/config.json
+Backend/serviceAccountKey.json
