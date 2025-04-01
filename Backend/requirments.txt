@@ -8,3 +8,4 @@ google-cloud-bigquery
 pandas
 openpyxl
 matplotlib
+bigquery
