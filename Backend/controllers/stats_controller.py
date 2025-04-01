@@ -97,7 +97,8 @@ def get_change_log():
 
 @stats_router.get("/export-excel")
 def export_excel_for_user(uid: str = Query(..., description="UID-ul utilizatorului")):
-    query = """
+    # Query 1: Get receipt details
+    receipts_query = """
     SELECT
       JSON_VALUE(data, '$.store_name') AS store_name,
       CAST(JSON_VALUE(data, '$.total_amount') AS FLOAT64) AS total_amount,
@@ -106,51 +107,114 @@ def export_excel_for_user(uid: str = Query(..., description="UID-ul utilizatorul
     WHERE JSON_VALUE(data, '$.user_uid') = @uid
     ORDER BY date DESC
     """
+
+    # Query 2: Get category spending data
+    categories_query = """
+    SELECT
+      category,
+      SUM(CAST(JSON_VALUE(data, '$.total_amount') AS FLOAT64)) AS total_spent
+    FROM `receipt-tracking-application.receipts_info.receipts_raw_latest`,
+    UNNEST(JSON_VALUE_ARRAY(data, '$.categories')) AS category
+    WHERE JSON_VALUE(data, '$.user_uid') = @uid
+    GROUP BY category
+    ORDER BY total_spent DESC
+    """
+
+    # Execute first query for receipts
     job_config = bigquery.QueryJobConfig(
         query_parameters=[bigquery.ScalarQueryParameter("uid", "STRING", uid)]
     )
-    job = client.query(query, job_config=job_config)
-    results = job.result()
-    rows = list(results)
+    receipts_job = client.query(receipts_query, job_config=job_config)
+    receipts_results = receipts_job.result()
+    receipts_rows = list(receipts_results)
 
-    if not rows:
+    if not receipts_rows:
         raise HTTPException(status_code=404, detail="Nu s-au găsit bonuri pentru acest utilizator.")
 
-    df = pd.DataFrame([dict(r.items()) for r in rows])
-    df["date"] = pd.to_datetime(df["date"])
-    total_spent = df["total_amount"].sum()
-    top_stores = df["store_name"].value_counts().reset_index()
+    # Execute second query for categories
+    categories_job = client.query(categories_query, job_config=job_config)
+    categories_results = categories_job.result()
+    categories_rows = list(categories_results)
+
+    # Create DataFrames
+    df_receipts = pd.DataFrame([dict(r.items()) for r in receipts_rows])
+    df_receipts["date"] = pd.to_datetime(df_receipts["date"])
+    total_spent = df_receipts["total_amount"].sum()
+
+    # Get top stores data (from original first method)
+    top_stores = df_receipts["store_name"].value_counts().reset_index()
     top_stores.columns = ["store_name", "num_receipts"]
 
+    if categories_rows:
+        df_categories = pd.DataFrame([dict(r.items()) for r in categories_rows])
+    else:
+        # Create empty DataFrame if no categories found
+        df_categories = pd.DataFrame(columns=["category", "total_spent"])
+
+    # Create Excel workbook
+    wb = Workbook()
+
+    # First tab: Receipts list
+    ws_bonuri = wb.active
+    ws_bonuri.title = "Bonuri"
+
+    # Add receipt data
+    for r in dataframe_to_rows(df_receipts, index=False, header=True):
+        ws_bonuri.append(r)
+
+    # Format date column
+    for row in ws_bonuri.iter_rows(min_row=2, min_col=3, max_col=3):
+        for cell in row:
+            cell.number_format = "DD-MM-YYYY"
+
+    # Second tab: Store frequency with bar chart
+    ws_stores = wb.create_sheet(title="Magazine")
+    ws_stores.append(["Total cheltuit (RON)", round(total_spent, 2)])
+    ws_stores.append([])
+    ws_stores.append(["Top magazine", "Nr. bonuri"])
+
+    # Add store frequency data
+    for index, row in top_stores.iterrows():
+        ws_stores.append([row["store_name"], row["num_receipts"]])
+
+    # Create bar chart for store frequency
     plt.figure(figsize=(6, 4))
     plt.bar(top_stores["store_name"], top_stores["num_receipts"])
     plt.xticks(rotation=45, ha='right')
     plt.title("Cele mai frecventate magazine")
     plt.tight_layout()
-    img_buffer = BytesIO()
-    plt.savefig(img_buffer, format='png')
-    img_buffer.seek(0)
 
-    wb = Workbook()
-    ws_bonuri = wb.active
-    ws_bonuri.title = "Bonuri"
+    stores_img_buffer = BytesIO()
+    plt.savefig(stores_img_buffer, format='png')
+    stores_img_buffer.seek(0)
 
-    for r in dataframe_to_rows(df, index=False, header=True):
-        ws_bonuri.append(r)
-    for row in ws_bonuri.iter_rows(min_row=2, min_col=3, max_col=3):
-        for cell in row:
-            cell.number_format = "DD-MM-YYYY"
+    stores_img = XLImage(stores_img_buffer)
+    ws_stores.add_image(stores_img, "E2")
 
-    ws_stats = wb.create_sheet(title="Statistici")
-    ws_stats.append(["Total cheltuit (RON)", round(total_spent, 2)])
-    ws_stats.append([])
-    ws_stats.append(["Top magazine", "Nr. bonuri"])
-    for index, row in top_stores.iterrows():
-        ws_stats.append([row["store_name"], row["num_receipts"]])
+    # Third tab: Categories with pie chart
+    ws_categories = wb.create_sheet(title="Categorii")
+    ws_categories.append(["Categorie", "Suma totală (RON)"])
 
-    img = XLImage(img_buffer)
-    ws_stats.add_image(img, "E2")
+    # Add category data
+    for index, row in df_categories.iterrows():
+        ws_categories.append([row["category"], round(row["total_spent"], 2)])
 
+    # Create pie chart for categories if data exists
+    if not df_categories.empty:
+        plt.figure(figsize=(6, 6))
+        plt.pie(df_categories["total_spent"], labels=df_categories["category"],
+                autopct="%1.1f%%", startangle=140)
+        plt.title("Distribuția cheltuielilor pe categorii")
+        plt.tight_layout()
+
+        categories_img_buffer = BytesIO()
+        plt.savefig(categories_img_buffer, format='png')
+        categories_img_buffer.seek(0)
+
+        categories_img = XLImage(categories_img_buffer)
+        ws_categories.add_image(categories_img, "D2")
+
+    # Save and return Excel file
     excel_buffer = BytesIO()
     wb.save(excel_buffer)
     excel_buffer.seek(0)
@@ -158,4 +222,8 @@ def export_excel_for_user(uid: str = Query(..., description="UID-ul utilizatorul
     filename = f"raport_{uid}.xlsx"
     headers = {"Content-Disposition": f"attachment; filename={filename}"}
 
-    return Response(content=excel_bytes, media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", headers=headers)
+    return Response(
+        content=excel_bytes,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers=headers
+    )
