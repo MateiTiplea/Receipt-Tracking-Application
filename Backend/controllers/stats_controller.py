@@ -1,4 +1,6 @@
 from fastapi import APIRouter, HTTPException, Response, Query
+from matplotlib.ticker import MaxNLocator
+
 from Backend.firebase_config import client
 from google.cloud import bigquery
 from io import BytesIO
@@ -125,6 +127,7 @@ def export_excel_for_user(uid: str = Query(..., description="UID-ul utilizatorul
     plt.figure(figsize=(6, 4))
     plt.bar(top_stores["store_name"], top_stores["num_receipts"])
     plt.xticks(rotation=45, ha='right')
+    plt.gca().yaxis.set_major_locator(MaxNLocator(integer=True))
     plt.title("Cele mai frecventate magazine")
     plt.tight_layout()
     img_buffer = BytesIO()
